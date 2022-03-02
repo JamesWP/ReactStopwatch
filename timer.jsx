@@ -11,7 +11,7 @@ function format(num, digs) {
 }
 
 function calculateCurentTime() {
-    return +(new Date());
+    return +(new Date()); // convert time to unix timesamp milliseconds
 }
 
 export let Timer = () => {
@@ -19,8 +19,9 @@ export let Timer = () => {
     let [curentTime, setCurentTime] = useState(calculateCurentTime());
     let [timerHandle, setTimerHandle] = useState(0);
 
+    let isRunning = timerHandle != 0;
     let totalElapsed = curentTime - startTime;
-    let seconds = totalElapsed / 1000 % 60;
+    let seconds = Math.floor(totalElapsed / 1000) % 60;
     let milliseconds = totalElapsed % 1000;
     
     let resetStopwatch = () => {
@@ -33,15 +34,31 @@ export let Timer = () => {
         setTimerHandle(0);
     };
 
-    let startStopwatch = () => {
-        let handle = setInterval(function (){
-            setCurentTime(calculateCurentTime());
-        }, 100);
+    let updateCurentTime = () => {
+        setCurentTime(calculateCurentTime());
+    }
 
+    let startStopwatch = () => {
+        if (timerHandle != 0) {
+            // Timer already running
+            return;
+        }
+
+        // reset the clock so when we start counting, we start from the time
+        // on the display
+        setStartTime(calculateCurentTime() - totalElapsed);
+        updateCurentTime();
+
+        // start the timer again
+        let handle = setInterval(updateCurentTime, 23);
+
+        // Save timer handle to pause can remove it
         setTimerHandle(handle);
     };
 
     useEffect(()=>{
+        // this will start the timer and we need to remember to clear the 
+        // timer when we are removed
         startStopwatch();
 
         return () => {
@@ -50,9 +67,9 @@ export let Timer = () => {
     }, []);
 
     return <div>
-        {format(seconds, 3)}.{format(milliseconds, 3)}
+        <p style={{fontSize:"3em", fontFamily:"monospace"}}>{format(seconds, 3)}.{format(milliseconds, 3)}</p>
         <button onClick={resetStopwatch}>Reset</button>
-        <button onClick={pauseStopwatch}>Pause</button>
-        <button onClick={startStopwatch}>Start</button>
+        {isRunning? <button onClick={pauseStopwatch}>Pause</button>
+                  : <button onClick={startStopwatch}>Start</button> }
         </div>
 };
